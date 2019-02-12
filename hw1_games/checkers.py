@@ -7,6 +7,7 @@
 	AI layout: https://github.com/microwerx/cs405605-aif/blob/master/experiments/tictactoe.py
 """
 import random
+import copy
 import tkinter as tk
 import tkinter.font as tkfont
 
@@ -27,7 +28,8 @@ class Agent:
 		self.selectMove = []
 	
 	# sense
-	def sense(self, percepts, environment):
+	def sense(self):
+		self.environment.getAvailableMoves(self, self.selectMove, self.selectCut)
 		'''self.percepts.append(percepts)
 		
 		self.availableMoves = environment.getPossibleMoves()
@@ -52,36 +54,6 @@ class StochasticAgent(Agent):
 		super().__init__(teamColor, environment)
 	
 	def think(self):
-		for dTop, topRow in self.environment.canvas.data["checker"].items():
-			for dLeft, checker, in topRow.items():
-				moveList = []
-				cutList = []
-				test = []
-				
-				if self.environment.canvas.itemcget(checker[0], "fill") == self.teamColor:
-					if "man" in self.environment.canvas.itemcget(checker[0], "tag"):
-						test.append(self.environment.testManCutList(dTop, dLeft, "topLeft"))
-						test.append(self.environment.testManCutList(dTop, dLeft, "topRight"))
-						test.append(self.environment.testManCutList(dTop, dLeft, "bottomLeft"))
-						test.append(self.environment.testManCutList(dTop, dLeft, "bottomRight"))
-					elif "king" in self.environment.canvas.itemcget(checker[0], "tag"):
-						test.append(self.environment.testKingCutList(dTop, dLeft, "topLeft"))
-						test.append(self.environment.testKingCutList(dTop, dLeft, "topRight"))
-						test.append(self.environment.testKingCutList(dTop, dLeft, "bottomLeft"))
-						test.append(self.environment.testKingCutList(dTop, dLeft, "bottomRight"))
-				
-				if test:
-					for tuple in test:
-						if tuple[0]:
-							moveList.append(tuple[0])
-						if tuple[1]:
-							cutList.append(tuple[1])
-					if moveList:
-						self.selectMove.append([dTop, dLeft, moveList])
-					if cutList:
-						self.selectCut.append([dTop, dLeft, cutList])
-						
-	def action(self):
 		if self.selectCut:
 			checker = random.choice(self.selectCut)
 			move = random.choice(checker[2])[0]
@@ -105,11 +77,62 @@ class StochasticAgent(Agent):
 		self.selectMove = []
 		self.environment.cutList = []
 		self.environment.moveList = []
+		
 
-#class BreadthFirstAgent(Agent)
-#class DepthFirstAgent(Agent)
-#class EvolutionaryAgent(Agent)
-#class AlphaBetaAgent(Agent)
+class BreadthFirstAgent(Agent):
+	
+	def __init__(self, teamColor, environment):
+		super().__init__(teamColor, environment)
+	
+	def think(self):
+		''''''
+	
+	def action(self):
+		''''''
+
+class DepthFirstAgent(Agent):
+	
+	def __init__(self, teamColor, environment):
+		super().__init__(teamColor, environment)
+	
+	def think(self):
+		''''''
+	
+	def action(self):
+		''''''
+
+class EvolutionaryAgent(Agent):
+	
+	def __init__(self, teamColor, environment):
+		super().__init__(teamColor, environment)
+	
+	def think(self):
+		''''''
+	
+	def action(self):
+		''''''
+
+class AlphaBetaAgent(Agent):
+	
+	def __init__(self, teamColor, environment):
+		super().__init__(teamColor, environment)
+	
+	def think(self):
+		bestMove = []
+		alpha = -100
+		alphai = 0
+		beta = 100
+		betai = 0
+		i = 0
+		hasWon = False
+		
+		# AlphaBeta
+		# Do best move
+		
+		self.selectCut = []
+		self.selectMove = []
+		self.environment.cutList = []
+		self.environment.moveList = []
 
 class Environment:
 	
@@ -119,6 +142,8 @@ class Environment:
 		self.canvas = canvas
 		self.player1Color = player1Color
 		self.player2Color = player2Color
+		self.lastMove = []
+		self.board = copy.copy(canvas)
 	
 	def getdir(self, dir):
 		if dir == "topLeft":
@@ -213,6 +238,74 @@ class Environment:
 			if srcLeft+(50*count*leftDir) in self.canvas.data["checker"][srcTop+(50*count*topDir)]:
 				self.canvas.delete(self.canvas.data["checker"][srcTop+(50*count*topDir)][srcLeft+(50*count*leftDir)][0])
 				self.canvas.data["checker"][srcTop+(50*count*topDir)].pop(srcLeft+(50*count*leftDir))
+	
+	def getAvailableMoves(self, ply, selectMove, selectCut):
+		for dTop, topRow in self.canvas.data["checker"].items():
+			for dLeft, checker, in topRow.items():
+				moveList = []
+				cutList = []
+				test = []
+				
+				if self.canvas.itemcget(checker[0], "fill") == ply.teamColor:
+					if "man" in self.canvas.itemcget(checker[0], "tag"):
+						test.append(self.testManCutList(dTop, dLeft, "topLeft"))
+						test.append(self.testManCutList(dTop, dLeft, "topRight"))
+						test.append(self.testManCutList(dTop, dLeft, "bottomLeft"))
+						test.append(self.testManCutList(dTop, dLeft, "bottomRight"))
+					elif "king" in self.canvas.itemcget(checker[0], "tag"):
+						test.append(self.testKingCutList(dTop, dLeft, "topLeft"))
+						test.append(self.testKingCutList(dTop, dLeft, "topRight"))
+						test.append(self.testKingCutList(dTop, dLeft, "bottomLeft"))
+						test.append(self.testKingCutList(dTop, dLeft, "bottomRight"))
+				
+				if test:
+					for tuple in test:
+						if tuple[0]:
+							moveList.append(tuple[0])
+						if tuple[1]:
+							cutList.append(tuple[1])
+					if moveList:
+						selectMove.append([dTop, dLeft, moveList])
+					if cutList:
+						selectCut.append([dTop, dLeft, cutList])
+	
+	def reset(self):
+		self.board = copy.copy(self.canvas)
+	
+	def put(self, srcTop, srcLeft, destTop, destLeft):
+		self.board.coords(self.board.data["checker"][destTop][destLeft][0], srcLeft, srcTop, srcLeft+50, srcTop+50)
+		self.board.data["checker"][srcTop][srcLeft] = self.board.data["checker"][destTop][destLeft]
+		self.board.data["checker"][destTop].pop(destLeft)
+	
+	def getPossibleMovesMoves(self, ply, selectMove, selectCut):
+		for dTop, topRow in self.board.data["checker"].items():
+			for dLeft, checker, in topRow.items():
+				moveList = []
+				cutList = []
+				test = []
+				
+				if self.board.itemcget(checker[0], "fill") == ply.teamColor:
+					if "man" in self.board.itemcget(checker[0], "tag"):
+						test.append(self.testManCutList(dTop, dLeft, "topLeft"))
+						test.append(self.testManCutList(dTop, dLeft, "topRight"))
+						test.append(self.testManCutList(dTop, dLeft, "bottomLeft"))
+						test.append(self.testManCutList(dTop, dLeft, "bottomRight"))
+					elif "king" in self.board.itemcget(checker[0], "tag"):
+						test.append(self.testKingCutList(dTop, dLeft, "topLeft"))
+						test.append(self.testKingCutList(dTop, dLeft, "topRight"))
+						test.append(self.testKingCutList(dTop, dLeft, "bottomLeft"))
+						test.append(self.testKingCutList(dTop, dLeft, "bottomRight"))
+				
+				if test:
+					for tuple in test:
+						if tuple[0]:
+							moveList.append(tuple[0])
+						if tuple[1]:
+							cutList.append(tuple[1])
+					if moveList:
+						selectMove.append([dTop, dLeft, moveList])
+					if cutList:
+						selectCut.append([dTop, dLeft, cutList])
 
 class Checkers:
 	
@@ -371,16 +464,18 @@ class Checkers:
 			self.startstopgame()
 		
 		hasWon = False
+		self.environment.reset()
+		
 		if self.turn == "player1":
-			self.agent1.think()
-			hasWon = self.agent1.action()
+			self.agent1.sense()
+			hasWon = self.agent1.think()
 			if hasWon:
 				self.wincounts[0] = self.wincounts[0] + 1
 				self.gamecount = self.gamecount + 1
 			self.turn = "player2"
 		elif self.turn == "player2":
-			self.agent2.think()
-			hasWon = self.agent2.action()
+			self.agent2.sense()
+			hasWon = self.agent2.think()
 			if hasWon:
 				self.wincounts[1] = self.wincounts[1] + 1
 				self.gamecount = self.gamecount + 1
