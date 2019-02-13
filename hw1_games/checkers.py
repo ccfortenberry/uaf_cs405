@@ -8,6 +8,7 @@
 """
 import random
 import copy
+import time
 import tkinter as tk
 import tkinter.font as tkfont
 
@@ -314,7 +315,6 @@ class Checkers:
 		
 		self.canvas = tk.Canvas(root, width=410, height=410)
 		self.canvas.pack()
-		self.canvas.data = {}
 		
 		self.top = 55
 		self.left = 55
@@ -359,9 +359,15 @@ class Checkers:
 	def init(self):
 		self.gamecount = 0
 		self.wincounts = [0, 0]
+		self.simStartTime = time.time()
 		
+		self.reset()
+	
+	def reset(self):
 		self.turn = "player1"
+		self.moveCount = 0
 		
+		self.canvas.data = {}
 		self.canvas.data["board"] = {}
 		self.canvas.data["boardval"] = []
 		self.canvas.data["checker"] = {}
@@ -395,6 +401,8 @@ class Checkers:
 				if not row&1 ^ col&1:
 					self.canvas.data["checker"][5+row*50][5+col*50+50] = [self.canvas.create_oval(5+col*50+50 , 5+row*50, 5+col*50+50+50 , 5+row*50+50, fill=self.player1Color, tag="man")]
 					self.canvas.data["checkerval"].append([5+row*50, 5+col*50+50])
+		
+		self.runStartTime = time.time()
 		
 		self.environment = Environment(self.cutList, self.moveList, self.canvas, self.player1Color, self.player2Color)
 		self.agent1 = self.newAgent(self.player1Color, self.team1AgentType.get())
@@ -460,18 +468,23 @@ class Checkers:
 			count+=1
 	
 	def run(self):
-		if self.gamecount >= 100:
+		if self.gamecount >= 20:
+			self.simEndTime = time.time()
+			print("Total simulation time: {}".format(self.simEndTime-self.simStartTime))
 			self.startstopgame()
 		
 		hasWon = False
-		self.environment.reset()
 		
 		if self.turn == "player1":
 			self.agent1.sense()
 			hasWon = self.agent1.think()
+			self.moveCount = self.moveCount + 1
 			if hasWon:
 				self.wincounts[0] = self.wincounts[0] + 1
 				self.gamecount = self.gamecount + 1
+				self.runEndTime = time.time()
+				print("Num of moves this during game {}, : {} over {}".format(self.gamecount, self.moveCount, self.runEndTime-self.runStartTime))
+				self.reset()
 			self.turn = "player2"
 		elif self.turn == "player2":
 			self.agent2.sense()
@@ -479,6 +492,9 @@ class Checkers:
 			if hasWon:
 				self.wincounts[1] = self.wincounts[1] + 1
 				self.gamecount = self.gamecount + 1
+				self.runEndTime = time.time()
+				print("Num of moves this during game {}, : {} over {}".format(self.gamecount, self.moveCount, self.runEndTime-self.runStartTime))
+				self.reset()
 			self.turn = "player1"
 	
 	def update(self):
